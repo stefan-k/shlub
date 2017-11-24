@@ -1,0 +1,6 @@
+[package]
+name = "shlub"
+version = "0.0.1"
+authors = ["Stefan Kroboth <stefan.kroboth@gmail.com>"]
+
+[dependencies]
