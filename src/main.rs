@@ -7,6 +7,13 @@ fn cwd() -> std::path::PathBuf {
     std::env::current_dir().unwrap()
 }
 
+fn user_home_dir() -> std::path::PathBuf {
+    match std::env::home_dir() {
+        Some(path) => path,
+        None => cwd(),
+    }
+}
+
 fn prompt() {
     // TODO: hostname
     let username = std::env::var("USER").unwrap();
@@ -35,7 +42,18 @@ fn list_env() {
     }
 }
 
+fn push_history(line: &String, history: &mut Vec<String>) {
+    history.push(line.clone());
+}
+
+fn print_history(history: &Vec<String>) {
+    for line in history.iter() {
+        println!("{}", line);
+    }
+}
+
 fn abort_mission() {
+    // TODO: Write History
     std::process::exit(0);
 }
 
@@ -43,7 +61,7 @@ fn chdir(dir: &str) -> Result<(), &'static str> {
     let path = std::path::Path::new(dir);
 
     if !path.exists() {
-        return Err("Directory doesn't exists.");
+        return Err("Directory doesn't exist.");
     }
 
     if !path.is_dir() {
@@ -59,29 +77,40 @@ fn chdir(dir: &str) -> Result<(), &'static str> {
 
 fn main() {
     println!("Hello, world!");
+    // load history from file!
+    // put current date as first
+    let mut history: Vec<String> = vec![String::from("BLA")];
     loop {
+        // borrow checker... really ugly. needs to be cleaned up!
+        let home_dir = user_home_dir().into_os_string().into_string().unwrap();
         prompt();
 
         let cmd = read_line().unwrap();
 
+        push_history(&cmd, &mut history);
+
         // All of this is just for testing right now.
-        match cmd.as_ref() {
+        let cmd_split: Vec<&str> = cmd.split(' ').collect();
+        match cmd_split[0] {
+            // match cmd.as_ref() {
             "exit" => break,
             "cwd" => println!("{}", cwd().display()),
             "listenv" => list_env(),
-            _ => {}
-        };
-
-        let cmd_split: Vec<&str> = cmd.split(' ').collect();
-
-        match cmd_split[0] {
+            "printhist" => print_history(&history),
             "cd" => {
-                if let Err(e) = chdir(cmd_split[1]) {
+                let new_dir;
+                if cmd_split.len() > 1 {
+                    new_dir = cmd_split[1];
+                } else {
+                    // `cd` without path should move to home directory.
+                    new_dir = &home_dir;
+                }
+                if let Err(e) = chdir(new_dir) {
                     println!("{}", e);
                 };
             }
             _ => println!("back: {}", cmd),
-        }
+        };
     }
     abort_mission();
 }
