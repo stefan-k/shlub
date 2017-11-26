@@ -2,5 +2,18 @@
 name = "shlub"
 version = "0.0.1"
 authors = ["Stefan Kroboth <stefan.kroboth@gmail.com>"]
+license = "MIT/Apache-2.0"
+description = "Worst shell ever."
+# documentation = "https://stefan-k.github.io/rust/shlub/"
+# homepage = "https://github.com/stefan-k/shlub"
+repository = "https://github.com/stefan-k/shlub"
+readme = "README.md"
+keywords = ["worst", "shell", "ever"]
+categories = ["command line utilities"]
+license-file = "LICENSE-APACHE"
 
 [dependencies]
+clippy = {version = "*", optional = true}
+
+[features]
+default = []
