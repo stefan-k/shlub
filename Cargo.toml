@@ -10,10 +10,11 @@ repository = "https://github.com/stefan-k/shlub"
 readme = "README.md"
 keywords = ["worst", "shell", "ever"]
 categories = ["command line utilities"]
-license-file = "LICENSE-APACHE"
+# license-file = "LICENSE-APACHE"
 
 [dependencies]
 clippy = {version = "*", optional = true}
+ncurses = "*"
 
 [features]
 default = []
