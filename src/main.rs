@@ -34,9 +34,19 @@ fn prompt() {
     refresh();
 }
 
+fn print_cmd(cmd: &str, init_y: i32, init_x: i32) {
+    mv(init_y, init_x);
+    clrtoeol();
+    printw(&cmd);
+    mv(init_y, init_x + cmd.chars().count() as i32);
+}
+
 fn read_line() -> Result<String, std::io::Error> {
     let mut cmd = String::from("");
-    let mut pos: u32 = 0;
+    let mut pos: usize = 0;
+    let mut init_x = 0;
+    let mut init_y = 0;
+    getyx(stdscr(), &mut init_y, &mut init_x);
     loop {
         // match std::char::from_u32(getch() as u32) {
         //     Some('\n') => break,
@@ -54,14 +64,22 @@ fn read_line() -> Result<String, std::io::Error> {
         match getch() {
             KEY_ENTER | KEY_BREAK | KEY_EOL | 10 => break,
             KEY_BACKSPACE => {
-                printw("fu");
-                // pos -= 1;
+                pos = if pos > 0 {
+                    if pos == cmd.chars().count() {
+                        cmd.pop();
+                    } else {
+                        cmd.remove(pos as usize);
+                    }
+                    print_cmd(&cmd, init_y, init_x);
+                    pos - 1
+                } else {
+                    0
+                };
             }
             c => {
                 pos += 1;
-                // printw(format!("|{}|", c).as_ref());
-                printw(&std::char::from_u32(c as u32).unwrap().to_string());
                 cmd.push(std::char::from_u32(c as u32).unwrap());
+                print_cmd(&cmd, init_y, init_x);
             }
         }
     }
