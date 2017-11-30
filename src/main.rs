@@ -31,7 +31,7 @@ fn prompt() {
     );
 
     printw(&prompt);
-    refresh();
+    // refresh();
 }
 
 fn print_cmd(cmd: &str, init_y: i32, init_x: i32) {
@@ -48,19 +48,6 @@ fn read_line() -> Result<String, std::io::Error> {
     let mut init_y = 0;
     getyx(stdscr(), &mut init_y, &mut init_x);
     loop {
-        // match std::char::from_u32(getch() as u32) {
-        //     Some('\n') => break,
-        //     Some('\u{0008}') => {
-        //         printw("fu");
-        //         // pos -= 1;
-        //     }
-        //     Some(c) => {
-        //         pos += 1;
-        //         printw(&c.to_string());
-        //         cmd.push(c);
-        //     }
-        //     None => {}
-        // }
         match getch() {
             KEY_ENTER | KEY_BREAK | KEY_EOL | 10 => break,
             KEY_BACKSPACE => {
@@ -88,7 +75,7 @@ fn read_line() -> Result<String, std::io::Error> {
 
 fn list_env() {
     for (key, value) in std::env::vars() {
-        println!("{}: {}", key, value);
+        printw(format!("{}: {}\n", key, value).as_ref());
     }
 }
 
@@ -98,12 +85,15 @@ fn push_history(line: &str, history: &mut Vec<String>) {
 
 fn print_history(history: &[String]) {
     for line in history.iter() {
-        println!("{}", line);
+        printw(format!("{}", line).as_ref());
     }
 }
 
 fn abort_mission() {
     // TODO: Write History
+
+    // avoids fucked up terminal after shell has been run
+    nocbreak();
     endwin();
     std::process::exit(0);
 }
@@ -138,11 +128,17 @@ fn main() {
     keypad(stdscr(), true);
     noecho();
 
+    // allow scrolling
+    scrollok(stdscr(), true);
+
     // print to the back buffer
-    printw("Hello, world!\n");
+    printw("shlub\n");
 
     // update the screen
     refresh();
+
+    let mut cx = 0;
+    let mut cy = 0;
 
     // load history from file!
     // put current date as first
@@ -151,9 +147,29 @@ fn main() {
         // borrow checker... really ugly. needs to be cleaned up!
         let home_dir = user_home_dir().into_os_string().into_string().unwrap();
 
+        let mut max_x = 0;
+        let mut max_y = 0;
+        getmaxyx(stdscr(), &mut max_y, &mut max_x);
+
+        getyx(stdscr(), &mut cy, &mut cx);
+        if cy + 1 > max_y - 1 {
+            wscrl(stdscr(), 1);
+            // why tho
+            mv(max_y - 2, 0);
+        }
+
+        printw("\n");
         prompt();
 
         let cmd = read_line().unwrap();
+        printw("\n");
+
+        getyx(stdscr(), &mut cy, &mut cx);
+        if cy + 1 > max_y - 1 {
+            wscrl(stdscr(), 1);
+            // why tho
+            mv(max_y - 2, 0);
+        }
 
         push_history(&cmd, &mut history);
 
@@ -161,7 +177,10 @@ fn main() {
         let cmd_split: Vec<&str> = cmd.split(' ').collect();
         match cmd_split[0] {
             "exit" => break,
-            "cwd" | "pwd" => println!("{}", cwd().display()),
+            "cwd" | "pwd" => {
+                printw(format!("{}", cwd().display()).as_ref());
+                ()
+            }
             "listenv" => list_env(),
             "printhist" => print_history(&history),
             "cd" => {
@@ -171,11 +190,15 @@ fn main() {
                     &home_dir
                 };
                 if let Err(e) = chdir(new_dir) {
-                    println!("{}", e);
+                    printw(format!("{}", e).as_ref());
                 };
             }
-            _ => println!("back: {}", cmd),
+            _ => {
+                printw(format!("back: {}", cmd).as_ref());
+                ()
+            }
         };
+        refresh();
     }
     abort_mission();
 }
