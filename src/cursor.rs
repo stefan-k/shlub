@@ -35,8 +35,8 @@ impl Cursor {
 
     pub fn set(&mut self, y: i32, x: i32) -> &mut Self {
         self.update_max();
-        self.y = y.clone();
-        self.x = x;
+        self.y = y + (x - (x % self.max_x)) / self.max_x;
+        self.x = x % self.max_x;
         self
     }
 
@@ -49,7 +49,12 @@ impl Cursor {
 
     pub fn left(&mut self) -> &mut Self {
         self.update_max();
-        self.x -= 1;
+        if self.x > 0 {
+            self.x -= 1;
+        } else {
+            self.x = self.max_x;
+            self.up();
+        }
         self
     }
 

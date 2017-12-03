@@ -93,13 +93,13 @@ impl Command {
     }
 }
 
-fn print_all(prompt: &mut Prompt, cmd: &Command, cursor: &mut Cursor) {
+fn print_all(cur_line: i32, prompt: &mut Prompt, cmd: &Command, cursor: &mut Cursor) {
     // TODO: Print right prompt and adapt drawing of command
     // move to beginning of line
-    let y = cursor.y;
+    let y = cur_line;
     mv(y, 0);
     // clear line
-    clrtoeol();
+    clrtobot();
     // update prompt
     prompt.update();
     // print prompt
@@ -110,9 +110,8 @@ fn print_all(prompt: &mut Prompt, cmd: &Command, cursor: &mut Cursor) {
     printw(&cmd.cmd);
     // move cursor to previous position
     cursor.set(y, prompt.pos_left + cmd.pos);
-    mv(y, cursor.x);
+    mv(cursor.y, cursor.x);
 }
-
 
 pub fn read_line() -> Result<String, std::io::Error> {
     let mut cursor = Cursor::current_pos();
@@ -120,7 +119,9 @@ pub fn read_line() -> Result<String, std::io::Error> {
     let mut prompt = Prompt::new();
 
     printw("\n");
-    print_all(&mut prompt, &cmd, &mut cursor);
+    cursor.down();
+    let cur_line = cursor.y;
+    print_all(cur_line, &mut prompt, &cmd, &mut cursor);
 
     loop {
         match getch() {
@@ -142,7 +143,7 @@ pub fn read_line() -> Result<String, std::io::Error> {
                 cursor.right();
             }
         }
-        print_all(&mut prompt, &cmd, &mut cursor);
+        print_all(cur_line, &mut prompt, &cmd, &mut cursor);
     }
 
     printw("\n");

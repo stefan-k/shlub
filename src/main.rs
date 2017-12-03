@@ -74,7 +74,9 @@ fn main() {
         push_history(&cmd, &mut history);
 
         let cmd_split: Vec<&str> = cmd.split(' ').collect();
+
         evaluate(&cmd_split, &history);
+
         refresh();
     }
 }
