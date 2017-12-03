@@ -1,97 +1,151 @@
 use ncurses::*;
 use std;
 use utils;
+use cursor::Cursor;
 
-fn print_cmd(cmd: &str, init_y: i32, init_x: i32, cursor: Option<(i32, i32)>) {
-    mv(init_y, init_x);
+struct Prompt {
+    left: String,
+    right: String,
+    pos_left: i32,
+    pos_right: i32,
+}
+
+impl Prompt {
+    pub fn new() -> Self {
+        Prompt {
+            left: "".to_owned(),
+            right: "".to_owned(),
+            pos_left: 0,
+            pos_right: 0,
+        }
+    }
+
+    pub fn update(&mut self) -> &mut Self {
+        let username = std::env::var("USER").unwrap();
+        let cwd = utils::cwd();
+        let prompt_left = format!(
+            "{} | {} > ",
+            username,
+            cwd.into_iter()
+                .map(|a| a.to_str().unwrap())
+                .collect::<Vec<&str>>()
+                .join(" > ")
+        );
+        let prompt_right = "fu".to_owned();
+        self.left = prompt_left.to_owned();
+        self.right = prompt_right.to_owned();
+        self.pos_left = (prompt_left.chars().count() + 1) as i32;
+        self.pos_right = (prompt_right.chars().count() + 1) as i32;
+        self
+    }
+}
+
+struct Command {
+    cmd: String,
+    len: i32,
+    pos: i32,
+}
+
+impl Command {
+    pub fn new() -> Self {
+        Command {
+            cmd: "".to_owned(),
+            len: 0,
+            pos: 0,
+        }
+    }
+
+    pub fn left(&mut self) -> &mut Self {
+        if self.pos > 0 {
+            self.pos -= 1;
+        }
+        self
+    }
+
+    pub fn right(&mut self) -> &mut Self {
+        if self.pos < self.len {
+            self.pos += 1;
+        }
+        self
+    }
+
+    pub fn insert(&mut self, c: i32) -> &mut Self {
+        self.cmd.insert(
+            self.pos as usize,
+            std::char::from_u32(c as u32).unwrap(),
+        );
+        self.len += 1;
+        self.pos += 1;
+        self
+    }
+
+    pub fn remove(&mut self) -> &mut Self {
+        if self.pos > 0 {
+            if self.pos == self.len {
+                self.cmd.pop();
+            } else {
+                self.cmd.remove(self.pos as usize);
+            }
+            self.len -= 1;
+            self.pos -= 1;
+        }
+        self
+    }
+}
+
+fn print_all(prompt: &mut Prompt, cmd: &Command, cursor: &mut Cursor) {
+    // TODO: Print right prompt and adapt drawing of command
+    // move to beginning of line
+    let y = cursor.y;
+    mv(y, 0);
+    // clear line
     clrtoeol();
-    printw(&cmd);
-    match cursor {
-        Some((y, x)) => mv(y, x),
-        None => mv(init_y, init_x + cmd.chars().count() as i32),
-    };
+    // update prompt
+    prompt.update();
+    // print prompt
+    printw(&prompt.left);
+    // move to end of prompt
+    mv(y, prompt.pos_left);
+    // print command
+    printw(&cmd.cmd);
+    // move cursor to previous position
+    cursor.set(y, prompt.pos_left + cmd.pos);
+    mv(y, cursor.x);
 }
 
-fn prompt() {
-    // TODO: hostname
-    let username = std::env::var("USER").unwrap();
-    let cwd = utils::cwd();
-    let prompt = format!(
-        "{} | {} > ",
-        username,
-        cwd.into_iter()
-            .map(|a| a.to_str().unwrap())
-            .collect::<Vec<&str>>()
-            .join(" > ")
-    );
-
-    printw(&prompt);
-    // refresh();
-}
 
 pub fn read_line() -> Result<String, std::io::Error> {
-    let mut cx = 0;
-    let mut cy = 0;
-    let mut max_x = 0;
-    let mut max_y = 0;
-    getmaxyx(stdscr(), &mut max_y, &mut max_x);
+    let mut cursor = Cursor::current_pos();
+    let mut cmd = Command::new();
+    let mut prompt = Prompt::new();
 
-    getyx(stdscr(), &mut cy, &mut cx);
-    if cy + 1 > max_y - 1 {
-        wscrl(stdscr(), 1);
-        // why tho
-        mv(max_y - 2, 0);
-    }
     printw("\n");
+    print_all(&mut prompt, &cmd, &mut cursor);
 
-    prompt();
-
-    let mut cmd = String::from("");
-    let mut pos: i32 = 0;
-    let mut init_x = 0;
-    let mut init_y = 0;
-    getyx(stdscr(), &mut init_y, &mut init_x);
     loop {
         match getch() {
             KEY_ENTER | KEY_BREAK | KEY_EOL | 10 => break,
             KEY_BACKSPACE => {
-                pos = if pos > 0 {
-                    if pos == cmd.chars().count() as i32 {
-                        cmd.pop();
-                    } else {
-                        cmd.remove(pos as usize);
-                    }
-                    print_cmd(&cmd, init_y, init_x, None);
-                    pos - 1
-                } else {
-                    0
-                };
+                cmd.remove();
+                cursor.left();
             }
             KEY_LEFT => {
-                pos = if pos > 0 { pos - 1 } else { 0 };
-                print_cmd(&cmd, init_y, init_x, Some((init_y, init_x + pos)));
+                cmd.left();
+                cursor.left();
             }
             KEY_RIGHT => {
-                pos = if pos < cmd.chars().count() as i32 {
-                    pos + 1
-                } else {
-                    pos
-                };
-                print_cmd(&cmd, init_y, init_x, Some((init_y, init_x + pos)));
+                cmd.right();
+                cursor.right();
             }
             c => {
-                cmd.insert(pos as usize, std::char::from_u32(c as u32).unwrap());
-                pos += 1;
-                print_cmd(&cmd, init_y, init_x, Some((init_y, init_x + pos)));
+                cmd.insert(c);
+                cursor.right();
             }
         }
+        print_all(&mut prompt, &cmd, &mut cursor);
     }
+
     printw("\n");
-    getyx(stdscr(), &mut cy, &mut cx);
-    if cy + 1 > max_y - 1 {
-        wscrl(stdscr(), 1);
-        // why tho
-        mv(max_y - 2, 0);
-    }
-    Ok(cmd)
+    cursor.down();
+    Ok(cmd.cmd)
 }
