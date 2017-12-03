@@ -18,7 +18,7 @@ fn abort_mission() {
     std::process::exit(0);
 }
 
-fn evaluate(cmd: &Vec<&str>, history: &Vec<String>) {
+fn evaluate(cmd: &[&str], history: &[String]) {
     // All of this is just for testing right now.
     match cmd[0] {
         "exit" => abort_mission(),
