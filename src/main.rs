@@ -7,7 +7,7 @@ extern crate shlub;
 use ncurses::*;
 use shlub::prompt::read_line;
 use shlub::utils::*;
-use shlub::history::*;
+use shlub::history::History;
 
 fn abort_mission() {
     // TODO: Write History
@@ -18,7 +18,7 @@ fn abort_mission() {
     std::process::exit(0);
 }
 
-fn evaluate(cmd: &[&str], history: &[String]) {
+fn evaluate(cmd: &[&str], history: &History) {
     // All of this is just for testing right now.
     match cmd[0] {
         "exit" => abort_mission(),
@@ -27,7 +27,10 @@ fn evaluate(cmd: &[&str], history: &[String]) {
             ()
         }
         "listenv" => list_env(),
-        "printhist" => print_history(&history),
+        "printhist" => {
+            printw(&history.get_all());
+            ()
+        }
         "cd" => {
             // borrow checker... really ugly. needs to be cleaned up!
             let home_dir = user_home_dir().into_os_string().into_string().unwrap();
@@ -66,12 +69,12 @@ fn main() {
 
     // load history from file!
     // put current date as first
-    let mut history: Vec<String> = vec!["BLA".to_owned()];
+    let mut history = History::new();
     loop {
 
         let cmd = read_line().unwrap();
 
-        push_history(&cmd, &mut history);
+        history.push(&cmd);
 
         let cmd_split: Vec<&str> = cmd.split(' ').collect();
 

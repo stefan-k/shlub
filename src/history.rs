@@ -1,12 +1,22 @@
-use ncurses::*;
-
-pub fn push_history(line: &str, history: &mut Vec<String>) {
-    history.push(line.to_owned());
+pub struct History {
+    history: Vec<String>,
+    pos: u32,
 }
 
-pub fn print_history(history: &[String]) {
-    for line in history.iter() {
-        // TODO: Last one doesn't require \n
-        printw(format!("{}\n", line).as_ref());
+impl History {
+    pub fn new() -> Self {
+        History {
+            history: vec![],
+            pos: 0,
+        }
+    }
+
+    pub fn push(&mut self, cmd: &str) -> &mut Self {
+        self.history.push(cmd.to_owned());
+        self
+    }
+
+    pub fn get_all(&self) -> String {
+        self.history.join("\n")
     }
 }
