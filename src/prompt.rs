@@ -2,11 +2,14 @@ use ncurses::*;
 use std;
 use utils;
 
-fn print_cmd(cmd: &str, init_y: i32, init_x: i32) {
+fn print_cmd(cmd: &str, init_y: i32, init_x: i32, cursor: Option<(i32, i32)>) {
     mv(init_y, init_x);
     clrtoeol();
     printw(&cmd);
-    mv(init_y, init_x + cmd.chars().count() as i32);
+    match cursor {
+        Some((y, x)) => mv(y, x),
+        None => mv(init_y, init_x + cmd.chars().count() as i32),
+    };
 }
 
 fn prompt() {
@@ -40,9 +43,11 @@ pub fn read_line() -> Result<String, std::io::Error> {
         mv(max_y - 2, 0);
     }
     printw("\n");
+
     prompt();
+
     let mut cmd = String::from("");
-    let mut pos: usize = 0;
+    let mut pos: i32 = 0;
     let mut init_x = 0;
     let mut init_y = 0;
     getyx(stdscr(), &mut init_y, &mut init_x);
@@ -51,21 +56,33 @@ pub fn read_line() -> Result<String, std::io::Error> {
             KEY_ENTER | KEY_BREAK | KEY_EOL | 10 => break,
             KEY_BACKSPACE => {
                 pos = if pos > 0 {
-                    if pos == cmd.chars().count() {
+                    if pos == cmd.chars().count() as i32 {
                         cmd.pop();
                     } else {
                         cmd.remove(pos as usize);
                     }
-                    print_cmd(&cmd, init_y, init_x);
+                    print_cmd(&cmd, init_y, init_x, None);
                     pos - 1
                 } else {
                     0
                 };
             }
+            KEY_LEFT => {
+                pos = if pos > 0 { pos - 1 } else { 0 };
+                print_cmd(&cmd, init_y, init_x, Some((init_y, init_x + pos)));
+            }
+            KEY_RIGHT => {
+                pos = if pos < cmd.chars().count() as i32 {
+                    pos + 1
+                } else {
+                    pos
+                };
+                print_cmd(&cmd, init_y, init_x, Some((init_y, init_x + pos)));
+            }
             c => {
+                cmd.insert(pos as usize, std::char::from_u32(c as u32).unwrap());
                 pos += 1;
-                cmd.push(std::char::from_u32(c as u32).unwrap());
-                print_cmd(&cmd, init_y, init_x);
+                print_cmd(&cmd, init_y, init_x, Some((init_y, init_x + pos)));
             }
         }
     }
