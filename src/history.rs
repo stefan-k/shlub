@@ -15,7 +15,7 @@ impl History {
         }
     }
 
-    pub fn back(&mut self) -> Option<String> {
+    pub fn backwards(&mut self) -> Option<String> {
         if self.pos < self.length {
             self.pos += 1;
             Some(self.history[self.length - self.pos].clone())
@@ -34,6 +34,7 @@ impl History {
     }
 
     pub fn push(&mut self, cmd: &str) -> &mut Self {
+        // TODO: Don't push if previous command is equivalent
         self.history.push(cmd.to_owned());
         self.pos = 0;
         self.length += 1;

@@ -149,7 +149,7 @@ pub fn read_line(history: &mut History) -> Result<String, std::io::Error> {
             }
             KEY_UP => {
                 // TODO: Stash the previous command!
-                if let Some(s) = history.back() {
+                if let Some(s) = history.backwards() {
                     cmd.set(s);
                 };
             }
