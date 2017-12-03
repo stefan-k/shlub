@@ -2,6 +2,7 @@ use ncurses::*;
 use std;
 use utils;
 use cursor::Cursor;
+use history::History;
 
 struct Prompt {
     left: String,
@@ -53,6 +54,14 @@ impl Command {
             len: 0,
             pos: 0,
         }
+    }
+
+    pub fn set(&mut self, cmd: String) -> &mut Self {
+        self.cmd = cmd;
+        let cmd_len = self.cmd.chars().count() as i32;
+        self.pos = cmd_len;
+        self.len = cmd_len;
+        self
     }
 
     pub fn left(&mut self) -> &mut Self {
@@ -113,7 +122,7 @@ fn print_all(cur_line: i32, prompt: &mut Prompt, cmd: &Command, cursor: &mut Cur
     mv(cursor.y, cursor.x);
 }
 
-pub fn read_line() -> Result<String, std::io::Error> {
+pub fn read_line(history: &mut History) -> Result<String, std::io::Error> {
     let mut cursor = Cursor::current_pos();
     let mut cmd = Command::new();
     let mut prompt = Prompt::new();
@@ -138,6 +147,18 @@ pub fn read_line() -> Result<String, std::io::Error> {
                 cmd.right();
                 cursor.right();
             }
+            KEY_UP => {
+                // TODO: Stash the previous command!
+                if let Some(s) = history.back() {
+                    cmd.set(s);
+                };
+            }
+            KEY_DOWN => {
+                match history.forward() {
+                    Some(s) => cmd.set(s),
+                    None => cmd.set("".to_owned()),
+                };
+            }
             c => {
                 cmd.insert(c);
                 cursor.right();
@@ -148,5 +169,6 @@ pub fn read_line() -> Result<String, std::io::Error> {
 
     printw("\n");
     cursor.down();
+    history.push(&cmd.cmd);
     Ok(cmd.cmd)
 }

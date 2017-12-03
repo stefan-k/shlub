@@ -72,9 +72,7 @@ fn main() {
     let mut history = History::new();
     loop {
 
-        let cmd = read_line().unwrap();
-
-        history.push(&cmd);
+        let cmd = read_line(&mut history).unwrap();
 
         let cmd_split: Vec<&str> = cmd.split(' ').collect();
 
