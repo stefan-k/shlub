@@ -15,6 +15,7 @@ categories = ["command line utilities"]
 [dependencies]
 clippy = {version = "*", optional = true}
 ncurses = "*"
+error-chain = "*"
 
 [features]
 default = []

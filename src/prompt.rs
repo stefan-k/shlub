@@ -3,6 +3,7 @@ use std;
 use utils;
 use cursor::Cursor;
 use history::History;
+use errors::*;
 
 struct Prompt {
     left: String,
@@ -122,7 +123,7 @@ fn print_all(cur_line: i32, prompt: &mut Prompt, cmd: &Command, cursor: &mut Cur
     mv(cursor.y, cursor.x);
 }
 
-pub fn read_line(history: &mut History) -> Result<String, std::io::Error> {
+pub fn read_line(history: &mut History) -> Result<String> {
     let mut cursor = Cursor::current_pos();
     let mut cmd = Command::new();
     let mut prompt = Prompt::new();

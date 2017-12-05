@@ -8,6 +8,7 @@ use ncurses::*;
 use shlub::prompt::read_line;
 use shlub::utils::*;
 use shlub::history::History;
+use shlub::errors::*;
 
 fn abort_mission() {
     // TODO: Write History
@@ -47,6 +48,23 @@ fn evaluate(cmd: &[&str], history: &History) {
 }
 
 fn main() {
+    if let Err(ref e) = run() {
+        println!("Error: {}", e);
+
+        for e in e.iter().skip(1) {
+            println!("caused by: {}", e);
+        }
+
+        // The backtrace is not always generated. Try to run this example with `RUST_BACKTRACE=1`.
+        if let Some(backtrace) = e.backtrace() {
+            println!("Backtrace: {:?}", backtrace);
+        }
+
+        ::std::process::exit(1);
+    }
+}
+
+fn run() -> Result<()> {
     // setlocale(LcCategory::all, "gb_EN.UTF-8");
 
     // Start ncurses

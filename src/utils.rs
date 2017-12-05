@@ -1,5 +1,6 @@
 use std;
 use ncurses::*;
+use errors::*;
 
 pub fn cwd() -> std::path::PathBuf {
     std::env::current_dir().unwrap()
@@ -18,18 +19,18 @@ pub fn list_env() {
     }
 }
 
-pub fn chdir(dir: &str) -> Result<(), &'static str> {
+pub fn chdir(dir: &str) -> Result<()> {
     let path = std::path::Path::new(dir);
 
     if !path.exists() {
-        return Err("Directory doesn't exist.");
+        return Err("Directory doesn't exist.".into());
     }
 
     if !path.is_dir() {
-        return Err("Directory is not a directory. wut?");
+        return Err("Directory is not a directory. wut?".into());
     }
     if path.is_file() {
-        return Err("Not a directory.");
+        return Err("Not a directory.".into());
     }
 
     std::env::set_current_dir(&path).is_ok();
