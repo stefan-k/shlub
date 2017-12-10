@@ -79,6 +79,11 @@ impl Command {
         self
     }
 
+    pub fn to_end(&mut self) -> &mut Self {
+        self.pos = self.len;
+        self
+    }
+
     pub fn insert(&mut self, c: i32) -> &mut Self {
         self.cmd.insert(
             self.pos as usize,
@@ -135,7 +140,13 @@ pub fn read_line(history: &mut History) -> Result<String> {
 
     loop {
         match getch() {
-            KEY_ENTER | KEY_BREAK | KEY_EOL | 10 => break,
+            KEY_ENTER | KEY_BREAK | KEY_EOL | 10 => {
+                // in case the cursor is not at the end of the line when pressing return, the
+                // cursor has to be moved to the end of the command and the command needs to be
+                // printed again. otherwise, everything after the cursor will vanish.
+                cmd.to_end();
+                break;
+            }
             KEY_BACKSPACE => {
                 cmd.remove();
                 cursor.left();
@@ -167,6 +178,9 @@ pub fn read_line(history: &mut History) -> Result<String> {
         }
         print_all(cur_line, &mut prompt, &cmd, &mut cursor);
     }
+
+    // print again to avoid printing \n in the middle of a command
+    print_all(cur_line, &mut prompt, &cmd, &mut cursor);
 
     printw("\n");
     cursor.down();
