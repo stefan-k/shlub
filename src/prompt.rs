@@ -5,6 +5,12 @@ use cursor::Cursor;
 use history::History;
 use errors::*;
 
+#[derive(PartialEq)]
+enum State {
+    NORMAL,
+    INSERT,
+}
+
 struct Prompt {
     left: String,
     right: String,
@@ -133,6 +139,8 @@ pub fn read_line(history: &mut History) -> Result<String> {
     let mut cmd = Command::new();
     let mut prompt = Prompt::new();
 
+    let mut state = State::INSERT;
+
     printw("\n");
     cursor.down();
     let cur_line = cursor.y;
@@ -140,6 +148,10 @@ pub fn read_line(history: &mut History) -> Result<String> {
 
     loop {
         match getch() {
+            27 => {
+                state = State::NORMAL;
+                ()
+            }
             KEY_ENTER | KEY_BREAK | KEY_EOL | 10 => {
                 // in case the cursor is not at the end of the line when pressing return, the
                 // cursor has to be moved to the end of the command and the command needs to be
@@ -172,8 +184,41 @@ pub fn read_line(history: &mut History) -> Result<String> {
                 };
             }
             c => {
-                cmd.insert(c);
-                cursor.right();
+                if state == State::NORMAL {
+                    match std::char::from_u32(c as u32).unwrap() {
+                        'i' => {
+                            state = State::INSERT;
+                        }
+                        'a' => {
+                            state = State::INSERT;
+                            cursor.right();
+                            cmd.right();
+                        }
+                        'h' => {
+                            cursor.left();
+                            cmd.left();
+                        }
+                        'j' => {
+                            match history.forward() {
+                                Some(s) => cmd.set(s),
+                                None => cmd.set("".to_owned()),
+                            };
+                        }
+                        'k' => {
+                            if let Some(s) = history.backwards() {
+                                cmd.set(s);
+                            };
+                        }
+                        'l' => {
+                            cmd.right();
+                            cursor.right();
+                        }
+                        _ => {}
+                    }
+                } else {
+                    cmd.insert(c);
+                    cursor.right();
+                }
             }
         }
         print_all(cur_line, &mut prompt, &cmd, &mut cursor);
