@@ -142,6 +142,8 @@ pub fn read_line(history: &mut History) -> Result<String> {
 
     let mut state = State::INSERT;
 
+    let mut stack = vec![];
+
     printw("\n");
     cursor.down();
     let cur_line = cursor.y;
@@ -149,61 +151,76 @@ pub fn read_line(history: &mut History) -> Result<String> {
 
     loop {
         let ch = getch();
-        match (state.clone(), ch, std::char::from_u32(ch as u32).unwrap()) {
+        stack.push(std::char::from_u32(ch as u32).unwrap());
+        match (state.clone(), ch, stack.as_slice()) {
             (State::INSERT, 27, _) => {
+                stack.clear();
                 state = State::NORMAL;
                 ()
             }
             (_, KEY_ENTER, _) |
             (_, KEY_BREAK, _) |
             (_, KEY_EOL, _) |
-            (_, _, '\n') => {
+            (_, _, &['\n']) => {
                 // in case the cursor is not at the end of the line when pressing return, the
                 // cursor has to be moved to the end of the command and the command needs to be
                 // printed again. otherwise, everything after the cursor will vanish.
                 cmd.to_end();
+                stack.clear();
                 break;
             }
             (_, KEY_BACKSPACE, _) => {
                 cmd.remove();
                 cursor.left();
+                stack.clear();
             }
             (_, KEY_LEFT, _) |
-            (State::NORMAL, _, 'h') => {
+            (State::NORMAL, _, &['h']) => {
                 cmd.left();
                 cursor.left();
+                stack.clear();
             }
             (_, KEY_RIGHT, _) |
-            (State::NORMAL, _, 'l') => {
+            (State::NORMAL, _, &['l']) => {
                 cmd.right();
                 cursor.right();
+                stack.clear();
             }
             (_, KEY_UP, _) |
-            (State::NORMAL, _, 'k') => {
+            (State::NORMAL, _, &['k']) => {
                 // TODO: Stash the previous command!
                 if let Some(s) = history.backwards() {
                     cmd.set(s);
                 };
+                stack.clear();
             }
             (_, KEY_DOWN, _) |
-            (State::NORMAL, _, 'j') => {
+            (State::NORMAL, _, &['j']) => {
                 match history.forward() {
                     Some(s) => cmd.set(s),
                     None => cmd.set("".to_owned()),
                 };
+                stack.clear();
             }
-            (State::NORMAL, _, 'i') => {
+            (State::NORMAL, _, &['i']) => {
                 state = State::INSERT;
+                stack.clear();
             }
-            (State::NORMAL, _, 'a') => {
+            (State::NORMAL, _, &['a']) => {
                 state = State::INSERT;
                 cursor.right();
                 cmd.right();
+                stack.clear();
             }
-            (State::NORMAL, _, _) => {}
+            (State::NORMAL, _, &[c]) => {
+                stack.push(c);
+            }
+            (State::NORMAL, _, &[]) => {}
+            (State::NORMAL, _, &[_, _..]) => {}
             (State::INSERT, c, _) => {
                 cmd.insert(c);
                 cursor.right();
+                stack.clear();
             }
         }
         print_all(cur_line, &mut prompt, &cmd, &mut cursor);
