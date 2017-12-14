@@ -5,10 +5,11 @@ use cursor::Cursor;
 use history::History;
 use errors::*;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone)]
 enum State {
     NORMAL,
     INSERT,
+    // REPLACE,
 }
 
 struct Prompt {
@@ -147,78 +148,62 @@ pub fn read_line(history: &mut History) -> Result<String> {
     print_all(cur_line, &mut prompt, &cmd, &mut cursor);
 
     loop {
-        match getch() {
-            27 => {
+        let ch = getch();
+        match (state.clone(), ch, std::char::from_u32(ch as u32).unwrap()) {
+            (State::INSERT, 27, _) => {
                 state = State::NORMAL;
                 ()
             }
-            KEY_ENTER | KEY_BREAK | KEY_EOL | 10 => {
+            (_, KEY_ENTER, _) |
+            (_, KEY_BREAK, _) |
+            (_, KEY_EOL, _) |
+            (_, _, '\n') => {
                 // in case the cursor is not at the end of the line when pressing return, the
                 // cursor has to be moved to the end of the command and the command needs to be
                 // printed again. otherwise, everything after the cursor will vanish.
                 cmd.to_end();
                 break;
             }
-            KEY_BACKSPACE => {
+            (_, KEY_BACKSPACE, _) => {
                 cmd.remove();
                 cursor.left();
             }
-            KEY_LEFT => {
+            (_, KEY_LEFT, _) |
+            (State::NORMAL, _, 'h') => {
                 cmd.left();
                 cursor.left();
             }
-            KEY_RIGHT => {
+            (_, KEY_RIGHT, _) |
+            (State::NORMAL, _, 'l') => {
                 cmd.right();
                 cursor.right();
             }
-            KEY_UP => {
+            (_, KEY_UP, _) |
+            (State::NORMAL, _, 'k') => {
                 // TODO: Stash the previous command!
                 if let Some(s) = history.backwards() {
                     cmd.set(s);
                 };
             }
-            KEY_DOWN => {
+            (_, KEY_DOWN, _) |
+            (State::NORMAL, _, 'j') => {
                 match history.forward() {
                     Some(s) => cmd.set(s),
                     None => cmd.set("".to_owned()),
                 };
             }
-            c => {
-                if state == State::NORMAL {
-                    match std::char::from_u32(c as u32).unwrap() {
-                        'i' => {
-                            state = State::INSERT;
-                        }
-                        'a' => {
-                            state = State::INSERT;
-                            cursor.right();
-                            cmd.right();
-                        }
-                        'h' => {
-                            cursor.left();
-                            cmd.left();
-                        }
-                        'j' => {
-                            match history.forward() {
-                                Some(s) => cmd.set(s),
-                                None => cmd.set("".to_owned()),
-                            };
-                        }
-                        'k' => {
-                            if let Some(s) = history.backwards() {
-                                cmd.set(s);
-                            };
-                        }
-                        'l' => {
-                            cmd.right();
-                            cursor.right();
-                        }
-                        _ => {}
-                    }
-                } else {
-                    cmd.insert(c);
-                    cursor.right();
-                }
+            (State::NORMAL, _, 'i') => {
+                state = State::INSERT;
+            }
+            (State::NORMAL, _, 'a') => {
+                state = State::INSERT;
+                cursor.right();
+                cmd.right();
+            }
+            (State::NORMAL, _, _) => {}
+            (State::INSERT, c, _) => {
+                cmd.insert(c);
+                cursor.right();
             }
         }
         print_all(cur_line, &mut prompt, &cmd, &mut cursor);
