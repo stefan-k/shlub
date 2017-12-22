@@ -144,7 +144,11 @@ fn print_all(
     stdout.flush().unwrap();
 }
 
-pub fn read_line(history: &mut History, stdout: &mut Stdout, stdin: &mut StdinLock) -> Result<String> {
+pub fn read_line(
+    history: &mut History,
+    stdout: &mut Stdout,
+    stdin: &mut StdinLock,
+) -> Result<String> {
     let mut cursor = Cursor::current_pos(stdout);
     let mut cmd = Command::new();
     let mut prompt = Prompt::new();
@@ -160,8 +164,8 @@ pub fn read_line(history: &mut History, stdout: &mut Stdout, stdin: &mut StdinLo
         let c = ch.unwrap();
         // println!("{:?}", c);
         // stdout.flush().unwrap();
-        if let Key::Char(c) = c {
-            stack.push(c);
+        if let Key::Char(cc) = c {
+            stack.push(cc);
         }
         match (state.clone(), c, stack.as_slice()) {
             (State::INSERT, Key::Esc, _) => {
