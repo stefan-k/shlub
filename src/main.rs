@@ -1,21 +1,20 @@
 #![cfg_attr(feature="clippy", feature(plugin))]
 #![cfg_attr(feature="clippy", plugin(clippy))]
-extern crate ncurses;
+extern crate termion;
 extern crate shlub;
 
 // #![warn(missing_docs)]
-use ncurses::*;
 use shlub::prompt::read_line;
 use shlub::utils::*;
 use shlub::history::History;
 use shlub::errors::*;
+use termion::raw::IntoRawMode;
+use std::io::{Write};
 
 fn abort_mission() {
     // TODO: Write History
 
     // avoids fucked up terminal after shell has been run
-    nocbreak();
-    endwin();
     std::process::exit(0);
 }
 
@@ -24,12 +23,12 @@ fn evaluate(cmd: &[&str], history: &History) {
     match cmd[0] {
         "exit" => abort_mission(),
         "cwd" | "pwd" => {
-            printw(format!("{}", cwd().display()).as_ref());
+            println!("{}", cwd().display());
             ()
         }
         "listenv" => list_env(),
         "printhist" => {
-            printw(&history.get_all());
+            println!("{}", &history.get_all());
             ()
         }
         "cd" => {
@@ -37,11 +36,11 @@ fn evaluate(cmd: &[&str], history: &History) {
             let home_dir = user_home_dir().into_os_string().into_string().unwrap();
             let new_dir = if cmd.len() > 1 { cmd[1] } else { &home_dir };
             if let Err(e) = chdir(new_dir) {
-                printw(format!("{}", e).as_ref());
+                println!("{}", e);
             };
         }
         _ => {
-            printw(format!("back: {}", cmd.join(" ")).as_ref());
+            println!("back: {}", cmd.join(" "));
             ()
         }
     };
@@ -65,37 +64,22 @@ fn main() {
 }
 
 fn run() -> Result<()> {
-    // setlocale(LcCategory::all, "gb_EN.UTF-8");
 
-    // Start ncurses
-    initscr();
-    // raw();
-    cbreak();
-
-    // allow for extended keyboard
-    keypad(stdscr(), true);
-    noecho();
-
-    // allow scrolling
-    scrollok(stdscr(), true);
-
-    // print to the back buffer
-    printw("shlub\n");
-
-    // update the screen
-    refresh();
+    let mut stdout = std::io::stdout().into_raw_mode().unwrap();
+    write!(stdout, "{}{}", termion::clear::All, termion::cursor::Goto(1, 1))?;
+    stdout.flush()?;
 
     // load history from file!
     // put current date as first
     let mut history = History::new();
     loop {
 
-        let cmd = read_line(&mut history).unwrap();
+        let cmd = read_line(&mut history, &mut stdout).unwrap();
 
         let cmd_split: Vec<&str> = cmd.split(' ').collect();
 
         evaluate(&cmd_split, &history);
+        stdout.flush()?;
 
-        refresh();
     }
 }

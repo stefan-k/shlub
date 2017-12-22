@@ -1,5 +1,4 @@
 use std;
-use ncurses::*;
 use errors::*;
 
 pub fn cwd() -> std::path::PathBuf {
@@ -15,7 +14,7 @@ pub fn user_home_dir() -> std::path::PathBuf {
 
 pub fn list_env() {
     for (key, value) in std::env::vars() {
-        printw(format!("{}: {}\n", key, value).as_ref());
+        print!("{}: {}\n", key, value);
     }
 }
 

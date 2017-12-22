@@ -2,7 +2,7 @@
 #![recursion_limit = "1024"]
 #[macro_use]
 extern crate error_chain;
-extern crate ncurses;
+extern crate termion;
 
 pub mod errors;
 pub mod utils;
