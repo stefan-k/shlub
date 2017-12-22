@@ -1,5 +1,5 @@
 use std;
-use std::io::{StdinLock, Stdout, Write};
+use std::io::{Stdin, Stdout, Write};
 use utils;
 use termion;
 use termion::input::TermRead;
@@ -123,31 +123,25 @@ fn print_all(
     stdout: &mut Stdout,
 ) {
     // TODO: Print right prompt and adapt drawing of command
-    // move to beginning of line
-    let y = cur_line;
-    print!(
-        "{}{}",
-        termion::cursor::Goto(1, y),
-        termion::clear::AfterCursor
-    );
-    // update prompt
     prompt.update();
-    // print prompt
-    print!("{}", &prompt.left);
-    // move to end of prompt
-    print!("{}", termion::cursor::Goto(prompt.pos_left, y));
-    // print command
-    print!("{}", &cmd.cmd);
-    // move cursor to previous position
-    cursor.set(prompt.pos_left + cmd.pos, y);
-    print!("{}", termion::cursor::Goto(cursor.x, cursor.y));
+    write!(
+        stdout,
+        "{}{}{}{}{}",
+        termion::cursor::Goto(1, cur_line),
+        termion::clear::AfterCursor,
+        &prompt.left,
+        termion::cursor::Goto(prompt.pos_left, cur_line),
+        &cmd.cmd
+    ).unwrap();
+    cursor.set(prompt.pos_left + cmd.pos, cur_line);
+    write!(stdout, "{}", termion::cursor::Goto(cursor.x, cursor.y)).unwrap();
     stdout.flush().unwrap();
 }
 
 pub fn read_line(
     history: &mut History,
     stdout: &mut Stdout,
-    stdin: &mut StdinLock,
+    stdin: &mut Stdin,
 ) -> Result<String> {
     let mut cursor = Cursor::current_pos(stdout);
     let mut cmd = Command::new();
@@ -157,8 +151,7 @@ pub fn read_line(
 
     let mut stack = vec![];
 
-    let cur_line = cursor.y;
-    print_all(cur_line, &mut prompt, &cmd, &mut cursor, stdout);
+    print_all(cursor.y, &mut prompt, &cmd, &mut cursor, stdout);
 
     for ch in stdin.keys() {
         let c = ch.unwrap();
@@ -232,11 +225,11 @@ pub fn read_line(
             }
             (_, _, _) => {}
         }
-        print_all(cur_line, &mut prompt, &cmd, &mut cursor, stdout);
+        print_all(cursor.y, &mut prompt, &cmd, &mut cursor, stdout);
     }
 
     // print again to avoid printing \n in the middle of a command
-    print_all(cur_line, &mut prompt, &cmd, &mut cursor, stdout);
+    print_all(cursor.y, &mut prompt, &cmd, &mut cursor, stdout);
 
     cursor.pos_0();
     println!("{}", termion::cursor::Goto(cursor.x, cursor.y));

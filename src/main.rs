@@ -67,9 +67,8 @@ fn main() {
 }
 
 fn run() -> Result<()> {
-    let stdin = std::io::stdin();
-    let mut stdin = stdin.lock();
     let mut stdout = std::io::stdout().into_raw_mode().unwrap();
+    let mut stdin = std::io::stdin();
     // write!(
     //     stdout,
     //     "{}{}",
