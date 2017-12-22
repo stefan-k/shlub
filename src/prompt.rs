@@ -1,5 +1,5 @@
 use std;
-use std::io::{Write, Stdout};
+use std::io::{StdinLock, Stdout, Write};
 use utils;
 use termion;
 use termion::input::TermRead;
@@ -41,7 +41,7 @@ impl Prompt {
             cwd.into_iter()
                 .map(|a| a.to_str().unwrap())
                 .collect::<Vec<&str>>()
-                .join(" > ")
+                .join("/")
         );
         let prompt_right = "fu".to_owned();
         self.left = prompt_left.to_owned();
@@ -95,10 +95,7 @@ impl Command {
     }
 
     pub fn insert(&mut self, c: char) -> &mut Self {
-        self.cmd.insert(
-            self.pos as usize,
-            c,
-        );
+        self.cmd.insert(self.pos as usize, c);
         self.len += 1;
         self.pos += 1;
         self
@@ -118,11 +115,21 @@ impl Command {
     }
 }
 
-fn print_all(cur_line: u16, prompt: &mut Prompt, cmd: &Command, cursor: &mut Cursor, stdout: &mut Stdout) {
+fn print_all(
+    cur_line: u16,
+    prompt: &mut Prompt,
+    cmd: &Command,
+    cursor: &mut Cursor,
+    stdout: &mut Stdout,
+) {
     // TODO: Print right prompt and adapt drawing of command
     // move to beginning of line
     let y = cur_line;
-    print!("{}{}", termion::cursor::Goto(1, y), termion::clear::AfterCursor);
+    print!(
+        "{}{}",
+        termion::cursor::Goto(1, y),
+        termion::clear::AfterCursor
+    );
     // update prompt
     prompt.update();
     // print prompt
@@ -137,7 +144,7 @@ fn print_all(cur_line: u16, prompt: &mut Prompt, cmd: &Command, cursor: &mut Cur
     stdout.flush().unwrap();
 }
 
-pub fn read_line(history: &mut History, stdout: &mut Stdout) -> Result<String> {
+pub fn read_line(history: &mut History, stdout: &mut Stdout, stdin: &mut StdinLock) -> Result<String> {
     let mut cursor = Cursor::current_pos(stdout);
     let mut cmd = Command::new();
     let mut prompt = Prompt::new();
@@ -148,10 +155,11 @@ pub fn read_line(history: &mut History, stdout: &mut Stdout) -> Result<String> {
 
     let cur_line = cursor.y;
     print_all(cur_line, &mut prompt, &cmd, &mut cursor, stdout);
-    let stdin = std::io::stdin();
 
     for ch in stdin.keys() {
         let c = ch.unwrap();
+        // println!("{:?}", c);
+        // stdout.flush().unwrap();
         if let Key::Char(c) = c {
             stack.push(c);
         }
@@ -161,8 +169,7 @@ pub fn read_line(history: &mut History, stdout: &mut Stdout) -> Result<String> {
                 state = State::NORMAL;
                 ()
             }
-            (_, Key::Char('\n'), _) |
-            (_, _, &['\n']) => {
+            (_, Key::Char('\n'), _) | (_, _, &['\n']) => {
                 // in case the cursor is not at the end of the line when pressing return, the
                 // cursor has to be moved to the end of the command and the command needs to be
                 // printed again. otherwise, everything after the cursor will vanish.
@@ -175,28 +182,24 @@ pub fn read_line(history: &mut History, stdout: &mut Stdout) -> Result<String> {
                 cursor.left();
                 stack.clear();
             }
-            (_, Key::Left, _) |
-            (State::NORMAL, _, &['h']) => {
+            (_, Key::Left, _) | (State::NORMAL, _, &['h']) => {
                 cmd.left();
                 cursor.left();
                 stack.clear();
             }
-            (_, Key::Right, _) |
-            (State::NORMAL, _, &['l']) => {
+            (_, Key::Right, _) | (State::NORMAL, _, &['l']) => {
                 cmd.right();
                 cursor.right();
                 stack.clear();
             }
-            (_, Key::Up, _) |
-            (State::NORMAL, _, &['k']) => {
+            (_, Key::Up, _) | (State::NORMAL, _, &['k']) => {
                 // TODO: Stash the previous command!
                 if let Some(s) = history.backwards() {
                     cmd.set(s);
                 };
                 stack.clear();
             }
-            (_, Key::Down, _) |
-            (State::NORMAL, _, &['j']) => {
+            (_, Key::Down, _) | (State::NORMAL, _, &['j']) => {
                 match history.forward() {
                     Some(s) => cmd.set(s),
                     None => cmd.set("".to_owned()),
