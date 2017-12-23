@@ -174,7 +174,7 @@ pub fn read_line(
                 stack.clear();
                 break;
             }
-            (_, Key::Backspace, _) => {
+            (_, Key::Backspace, _) | (_, Key::Ctrl('h'), _) => {
                 cmd.remove();
                 cursor.left();
                 stack.clear();
