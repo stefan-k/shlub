@@ -16,7 +16,8 @@ fn get_screen_max() -> Result<(u16, u16)> {
 }
 
 impl Cursor {
-    pub fn current_pos(stdout: &mut Stdout) -> Self {
+    // pub fn current_pos(stdout: &mut Stdout) -> Self {
+    pub fn current_pos(stdout: &mut termion::raw::RawTerminal<Stdout>) -> Self {
         let (max_x, max_y) = get_screen_max().unwrap();
         let (cx, cy) = stdout.cursor_pos().unwrap();
         Cursor {

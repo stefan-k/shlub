@@ -1,9 +1,9 @@
 use std;
-use std::io::{Stdin, Stdout, Write};
 use utils;
 use termion;
-use termion::input::TermRead;
 use termion::event::Key;
+use termion::input::TermRead;
+use std::io::{stdin, Stdout, Write};
 use cursor::Cursor;
 use history::History;
 use errors::*;
@@ -140,8 +140,7 @@ fn print_all(
 
 pub fn read_line(
     history: &mut History,
-    stdout: &mut Stdout,
-    stdin: &mut Stdin,
+    stdout: &mut termion::raw::RawTerminal<Stdout>,
 ) -> Result<String> {
     let mut cursor = Cursor::current_pos(stdout);
     let mut cmd = Command::new();
@@ -153,8 +152,12 @@ pub fn read_line(
 
     print_all(cursor.y, &mut prompt, &cmd, &mut cursor, stdout);
 
-    for ch in stdin.keys() {
-        let c = ch.unwrap();
+    let stdin = stdin();
+    let mut ch = stdin.lock().keys();
+    // for ch in stdin.lock().keys() {
+    loop {
+        // let c = ch.unwrap();
+        let c = ch.next().unwrap().unwrap();
         // println!("{:?}", c);
         // stdout.flush().unwrap();
         if let Key::Char(cc) = c {
@@ -232,7 +235,8 @@ pub fn read_line(
     print_all(cursor.y, &mut prompt, &cmd, &mut cursor, stdout);
 
     cursor.pos_0();
-    println!("{}", termion::cursor::Goto(cursor.x, cursor.y));
+    write!(stdout, "{}\n", termion::cursor::Goto(cursor.x, cursor.y))?;
+    stdout.flush()?;
     history.push(&cmd.cmd);
     Ok(cmd.cmd)
 }

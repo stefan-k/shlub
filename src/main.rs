@@ -11,14 +11,15 @@ use shlub::errors::*;
 use termion::raw::IntoRawMode;
 use std::io::{Stdout, Write};
 
-fn abort_mission(stdout: &mut Stdout) {
+// fn abort_mission(stdout: &mut Stdout) {
+fn abort_mission(stdout: &mut termion::raw::RawTerminal<Stdout>) {
     // TODO: Write History
     stdout.flush().unwrap();
     drop(stdout);
     std::process::exit(0);
 }
 
-fn evaluate(cmd: &[&str], history: &History, stdout: &mut Stdout) -> Result<()> {
+fn evaluate(cmd: &[&str], history: &History, stdout: &mut termion::raw::RawTerminal<Stdout>) -> Result<()> {
     // All of this is just for testing right now.
     match cmd[0] {
         "exit" => abort_mission(stdout),
@@ -67,21 +68,16 @@ fn main() {
 }
 
 fn run() -> Result<()> {
-    let mut stdout = std::io::stdout().into_raw_mode().unwrap();
-    let mut stdin = std::io::stdin();
-    // write!(
-    //     stdout,
-    //     "{}{}",
-    //     termion::clear::All,
-    //     termion::cursor::Goto(1, 1)
-    // )?;
-    // stdout.flush()?;
+    let stdout = std::io::stdout();
+    let mut stdout = stdout.into_raw_mode().unwrap();
+    stdout.flush()?;
 
     // load history from file!
     // put current date as first
     let mut history = History::new();
     loop {
-        let cmd = read_line(&mut history, &mut stdout, &mut stdin).unwrap();
+        // let cmd = read_line(&mut history, &mut stdout, &stdin)?;
+        let cmd = read_line(&mut history, &mut stdout)?;
 
         let cmd_split: Vec<&str> = cmd.split(' ').collect();
 
