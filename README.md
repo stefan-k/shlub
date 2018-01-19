@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/stefan-k/shlub.svg?branch=master)](https://travis-ci.org/stefan-k/shlub)
+
 # shlub
 
 shlub shlub shlub shlub shlub shlub shlub shlub shlub shlub shlub shlub shlub shlub shlub shlub, Batman!
