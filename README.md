@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/stefan-k/shlub.svg?branch=master)](https://travis-ci.org/stefan-k/shlub)
+[![Build Status](https://travis-ci.org/stefan-k/shlub.svg?branch=termion)](https://travis-ci.org/stefan-k/shlub)
 
 # shlub
 
