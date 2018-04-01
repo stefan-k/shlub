@@ -7,6 +7,7 @@ use std::io::{stdin, Stdout, Write};
 use cursor::Cursor;
 use history::History;
 use errors::*;
+use termion::raw::IntoRawMode;
 
 #[derive(PartialEq, Clone)]
 enum State {
@@ -133,7 +134,9 @@ fn print_all(
         termion::cursor::Goto(prompt.pos_left, cur_line),
         &cmd.cmd
     ).unwrap();
+    // write!(stdout, "{}a", termion::cursor::Goto(1, cursor.y - 1)).unwrap();
     cursor.set(prompt.pos_left + cmd.pos, cur_line);
+    // write!(stdout, "{}b", termion::cursor::Goto(2, cursor.y - 1)).unwrap();
     write!(stdout, "{}", termion::cursor::Goto(cursor.x, cursor.y)).unwrap();
     stdout.flush().unwrap();
 }
@@ -142,7 +145,11 @@ pub fn read_line(
     history: &mut History,
     stdout: &mut termion::raw::RawTerminal<Stdout>,
 ) -> Result<String> {
-    let mut cursor = Cursor::current_pos(stdout);
+    // let mut stdout = stdout.into_raw_mode().unwrap();
+    let stdout = std::io::stdout();
+    let mut stdout = stdout.into_raw_mode().unwrap();
+
+    let mut cursor = Cursor::current_pos(&mut stdout);
     let mut cmd = Command::new();
     let mut prompt = Prompt::new();
 
@@ -150,17 +157,37 @@ pub fn read_line(
 
     let mut stack = vec![];
 
-    print_all(cursor.y, &mut prompt, &cmd, &mut cursor, stdout);
-
     let stdin = stdin();
     let mut ch = stdin.lock().keys();
-    // for ch in stdin.lock().keys() {
+    let bla = cursor.x;
+
+    write!(
+        stdout,
+        "{}here1",
+        termion::cursor::Goto(bla + 10, cursor.y - 1)
+    ).unwrap();
+
+    print_all(cursor.y, &mut prompt, &cmd, &mut cursor, &mut stdout);
+
+    write!(
+        stdout,
+        "{}here2",
+        termion::cursor::Goto(bla + 15, cursor.y - 1)
+    ).unwrap();
+
+    // let mut ch = stdin.keys();
+    /* for ch in stdin.lock().keys() { */
     loop {
         // let c = ch.unwrap();
         let c = ch.next().unwrap().unwrap();
         // println!("{:?}", c);
         // stdout.flush().unwrap();
         if let Key::Char(cc) = c {
+            // write!(
+            //     stdout,
+            //     "{}here",
+            //     termion::cursor::Goto(cursor.x, cursor.y - 1)
+            // ).unwrap();
             stack.push(cc);
         }
         match (state.clone(), c, stack.as_slice()) {
@@ -228,11 +255,11 @@ pub fn read_line(
             }
             (_, _, _) => {}
         }
-        print_all(cursor.y, &mut prompt, &cmd, &mut cursor, stdout);
+        print_all(cursor.y, &mut prompt, &cmd, &mut cursor, &mut stdout);
     }
 
     // print again to avoid printing \n in the middle of a command
-    print_all(cursor.y, &mut prompt, &cmd, &mut cursor, stdout);
+    print_all(cursor.y, &mut prompt, &cmd, &mut cursor, &mut stdout);
 
     cursor.pos_0();
     write!(stdout, "{}\n", termion::cursor::Goto(cursor.x, cursor.y))?;

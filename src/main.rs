@@ -19,7 +19,11 @@ fn abort_mission(stdout: &mut termion::raw::RawTerminal<Stdout>) {
     std::process::exit(0);
 }
 
-fn evaluate(cmd: &[&str], history: &History, stdout: &mut termion::raw::RawTerminal<Stdout>) -> Result<()> {
+fn evaluate(
+    cmd: &[&str],
+    history: &History,
+    stdout: &mut termion::raw::RawTerminal<Stdout>,
+) -> Result<()> {
     // All of this is just for testing right now.
     match cmd[0] {
         "exit" => abort_mission(stdout),
@@ -70,7 +74,7 @@ fn main() {
 fn run() -> Result<()> {
     let stdout = std::io::stdout();
     let mut stdout = stdout.into_raw_mode().unwrap();
-    stdout.flush()?;
+    // stdout.flush()?;
 
     // load history from file!
     // put current date as first
