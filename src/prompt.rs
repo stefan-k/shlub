@@ -7,7 +7,6 @@ use std::io::{stdin, Stdout, Write};
 use cursor::Cursor;
 use history::History;
 use errors::*;
-use termion::raw::IntoRawMode;
 
 #[derive(PartialEq, Clone)]
 enum State {
@@ -146,10 +145,10 @@ pub fn read_line(
     stdout: &mut termion::raw::RawTerminal<Stdout>,
 ) -> Result<String> {
     // let mut stdout = stdout.into_raw_mode().unwrap();
-    let stdout = std::io::stdout();
-    let mut stdout = stdout.into_raw_mode().unwrap();
+    // let stdout = std::io::stdout();
+    // let mut stdout = stdout.into_raw_mode().unwrap();
 
-    let mut cursor = Cursor::current_pos(&mut stdout);
+    let mut cursor = Cursor::current_pos(stdout);
     let mut cmd = Command::new();
     let mut prompt = Prompt::new();
 
@@ -167,7 +166,7 @@ pub fn read_line(
         termion::cursor::Goto(bla + 10, cursor.y - 1)
     ).unwrap();
 
-    print_all(cursor.y, &mut prompt, &cmd, &mut cursor, &mut stdout);
+    print_all(cursor.y, &mut prompt, &cmd, &mut cursor, stdout);
 
     write!(
         stdout,
@@ -255,11 +254,11 @@ pub fn read_line(
             }
             (_, _, _) => {}
         }
-        print_all(cursor.y, &mut prompt, &cmd, &mut cursor, &mut stdout);
+        print_all(cursor.y, &mut prompt, &cmd, &mut cursor, stdout);
     }
 
     // print again to avoid printing \n in the middle of a command
-    print_all(cursor.y, &mut prompt, &cmd, &mut cursor, &mut stdout);
+    print_all(cursor.y, &mut prompt, &cmd, &mut cursor, stdout);
 
     cursor.pos_0();
     write!(stdout, "{}\n", termion::cursor::Goto(cursor.x, cursor.y))?;
