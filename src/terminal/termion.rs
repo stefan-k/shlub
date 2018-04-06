@@ -8,7 +8,7 @@
 //! # Todo
 
 use std;
-use termion::raw::{IntoRawMode, RawTerminal};
+use termion::{input::{Keys, TermRead}, raw::{IntoRawMode, RawTerminal}};
 
 pub struct Terminal {
     pub stdout: RawTerminal<std::io::Stdout>,
@@ -21,5 +21,9 @@ impl Terminal {
         Terminal {
             stdout: stdout.into_raw_mode().unwrap(),
         }
+    }
+
+    pub fn keys(&self) -> Keys<std::io::Stdin> {
+        std::io::stdin().keys()
     }
 }

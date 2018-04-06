@@ -11,9 +11,8 @@ use std;
 use utils;
 use termion;
 use termion::event::Key;
-use termion::input::TermRead;
 use terminal::termion::Terminal;
-use std::io::{stdin, Stdout, Write};
+use std::io::{Stdout, Write};
 use cursor::Cursor;
 use history::History;
 use errors::*;
@@ -143,22 +142,12 @@ fn print_all(
         termion::cursor::Goto(prompt.pos_left, cur_line),
         &cmd.cmd
     ).unwrap();
-    // write!(stdout, "{}a", termion::cursor::Goto(1, cursor.y - 1)).unwrap();
     cursor.set(prompt.pos_left + cmd.pos, cur_line);
-    // write!(stdout, "{}b", termion::cursor::Goto(2, cursor.y - 1)).unwrap();
     write!(stdout, "{}", termion::cursor::Goto(cursor.x, cursor.y)).unwrap();
     stdout.flush().unwrap();
 }
 
-pub fn read_line(
-    history: &mut History,
-    // stdout: &mut termion::raw::RawTerminal<Stdout>,
-    term: &mut Terminal,
-) -> Result<String> {
-    // let mut stdout = stdout.into_raw_mode().unwrap();
-    // let stdout = std::io::stdout();
-    // let mut stdout = stdout.into_raw_mode().unwrap();
-
+pub fn read_line(history: &mut History, term: &mut Terminal) -> Result<String> {
     let mut cursor = Cursor::current_pos(&mut term.stdout);
     let mut cmd = Command::new();
     let mut prompt = Prompt::new();
@@ -167,37 +156,11 @@ pub fn read_line(
 
     let mut stack = vec![];
 
-    let stdin = stdin();
-    let mut ch = stdin.lock().keys();
-    let bla = cursor.x;
-
-    write!(
-        term.stdout,
-        "{}here1",
-        termion::cursor::Goto(bla + 10, cursor.y - 1)
-    ).unwrap();
-
     print_all(cursor.y, &mut prompt, &cmd, &mut cursor, &mut term.stdout);
 
-    write!(
-        term.stdout,
-        "{}here2",
-        termion::cursor::Goto(bla + 15, cursor.y - 1)
-    ).unwrap();
-
-    // let mut ch = stdin.keys();
-    /* for ch in stdin.lock().keys() { */
-    loop {
-        // let c = ch.unwrap();
-        let c = ch.next().unwrap().unwrap();
-        // println!("{:?}", c);
-        // stdout.flush().unwrap();
+    for ch in term.keys() {
+        let c = ch.unwrap();
         if let Key::Char(cc) = c {
-            // write!(
-            //     stdout,
-            //     "{}here",
-            //     termion::cursor::Goto(cursor.x, cursor.y - 1)
-            // ).unwrap();
             stack.push(cc);
         }
         match (state.clone(), c, stack.as_slice()) {
