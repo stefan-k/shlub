@@ -17,6 +17,7 @@ use shlub::prompt::read_line;
 use shlub::utils::*;
 use shlub::history::History;
 use shlub::errors::*;
+use shlub::terminal::termion::Terminal;
 use termion::raw::IntoRawMode;
 use std::io::{Stdout, Write};
 
@@ -81,19 +82,17 @@ fn main() {
 }
 
 fn run() -> Result<()> {
-    let stdout = std::io::stdout();
-    let mut stdout = stdout.into_raw_mode().unwrap();
-    // stdout.flush()?;
+    let mut term = Terminal::new();
 
     // load history from file!
     // put current date as first
     let mut history = History::new();
     loop {
         // let cmd = read_line(&mut history, &mut stdout, &stdin)?;
-        let cmd = read_line(&mut history, &mut stdout)?;
+        let cmd = read_line(&mut history, &mut term.stdout)?;
 
         let cmd_split: Vec<&str> = cmd.split(' ').collect();
 
-        evaluate(&cmd_split, &history, &mut stdout)?;
+        evaluate(&cmd_split, &history, &mut term.stdout)?;
     }
 }

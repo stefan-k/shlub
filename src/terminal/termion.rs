@@ -7,15 +7,17 @@
 
 //! # Todo
 
-#![feature(slice_patterns)]
-#![recursion_limit = "1024"]
-#[macro_use]
-extern crate error_chain;
-extern crate termion;
+use std;
+use termion::raw::{IntoRawMode, RawTerminal};
 
-pub mod errors;
-pub mod utils;
-pub mod history;
-pub mod cursor;
-pub mod prompt;
-pub mod terminal;
+pub struct Terminal {
+    pub stdout: RawTerminal<std::io::Stdout>,
+}
+
+impl Terminal {
+    pub fn new() -> Self {
+        let stdout = std::io::stdout();
+        let mut stdout = stdout.into_raw_mode().unwrap();
+        Terminal { stdout: stdout }
+    }
+}

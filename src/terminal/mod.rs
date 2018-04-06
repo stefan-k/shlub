@@ -7,15 +7,4 @@
 
 //! # Todo
 
-#![feature(slice_patterns)]
-#![recursion_limit = "1024"]
-#[macro_use]
-extern crate error_chain;
-extern crate termion;
-
-pub mod errors;
-pub mod utils;
-pub mod history;
-pub mod cursor;
-pub mod prompt;
-pub mod terminal;
+pub mod termion;
