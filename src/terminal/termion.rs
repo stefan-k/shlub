@@ -17,7 +17,9 @@ pub struct Terminal {
 impl Terminal {
     pub fn new() -> Self {
         let stdout = std::io::stdout();
-        let mut stdout = stdout.into_raw_mode().unwrap();
-        Terminal { stdout: stdout }
+        // let stdout = stdout.into_raw_mode().unwrap();
+        Terminal {
+            stdout: stdout.into_raw_mode().unwrap(),
+        }
     }
 }

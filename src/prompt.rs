@@ -12,6 +12,7 @@ use utils;
 use termion;
 use termion::event::Key;
 use termion::input::TermRead;
+use terminal::termion::Terminal;
 use std::io::{stdin, Stdout, Write};
 use cursor::Cursor;
 use history::History;
@@ -151,13 +152,14 @@ fn print_all(
 
 pub fn read_line(
     history: &mut History,
-    stdout: &mut termion::raw::RawTerminal<Stdout>,
+    // stdout: &mut termion::raw::RawTerminal<Stdout>,
+    term: &mut Terminal,
 ) -> Result<String> {
     // let mut stdout = stdout.into_raw_mode().unwrap();
     // let stdout = std::io::stdout();
     // let mut stdout = stdout.into_raw_mode().unwrap();
 
-    let mut cursor = Cursor::current_pos(stdout);
+    let mut cursor = Cursor::current_pos(&mut term.stdout);
     let mut cmd = Command::new();
     let mut prompt = Prompt::new();
 
@@ -170,15 +172,15 @@ pub fn read_line(
     let bla = cursor.x;
 
     write!(
-        stdout,
+        term.stdout,
         "{}here1",
         termion::cursor::Goto(bla + 10, cursor.y - 1)
     ).unwrap();
 
-    print_all(cursor.y, &mut prompt, &cmd, &mut cursor, stdout);
+    print_all(cursor.y, &mut prompt, &cmd, &mut cursor, &mut term.stdout);
 
     write!(
-        stdout,
+        term.stdout,
         "{}here2",
         termion::cursor::Goto(bla + 15, cursor.y - 1)
     ).unwrap();
@@ -263,15 +265,19 @@ pub fn read_line(
             }
             (_, _, _) => {}
         }
-        print_all(cursor.y, &mut prompt, &cmd, &mut cursor, stdout);
+        print_all(cursor.y, &mut prompt, &cmd, &mut cursor, &mut term.stdout);
     }
 
     // print again to avoid printing \n in the middle of a command
-    print_all(cursor.y, &mut prompt, &cmd, &mut cursor, stdout);
+    print_all(cursor.y, &mut prompt, &cmd, &mut cursor, &mut term.stdout);
 
     cursor.pos_0();
-    write!(stdout, "{}\n", termion::cursor::Goto(cursor.x, cursor.y))?;
-    stdout.flush()?;
+    write!(
+        term.stdout,
+        "{}\n",
+        termion::cursor::Goto(cursor.x, cursor.y)
+    )?;
+    term.stdout.flush()?;
     history.push(&cmd.cmd);
     Ok(cmd.cmd)
 }

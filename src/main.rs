@@ -18,7 +18,6 @@ use shlub::utils::*;
 use shlub::history::History;
 use shlub::errors::*;
 use shlub::terminal::termion::Terminal;
-use termion::raw::IntoRawMode;
 use std::io::{Stdout, Write};
 
 // fn abort_mission(stdout: &mut Stdout) {
@@ -88,8 +87,7 @@ fn run() -> Result<()> {
     // put current date as first
     let mut history = History::new();
     loop {
-        // let cmd = read_line(&mut history, &mut stdout, &stdin)?;
-        let cmd = read_line(&mut history, &mut term.stdout)?;
+        let cmd = read_line(&mut history, &mut term)?;
 
         let cmd_split: Vec<&str> = cmd.split(' ').collect();
 
