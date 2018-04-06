@@ -148,7 +148,7 @@ fn print_all(
 }
 
 pub fn read_line(history: &mut History, term: &mut Terminal) -> Result<String> {
-    let mut cursor = Cursor::current_pos(&mut term.stdout);
+    let mut cursor = Cursor::current_pos(term);
     let mut cmd = Command::new();
     let mut prompt = Prompt::new();
 

@@ -8,7 +8,7 @@
 //! # Todo
 
 use std;
-use termion::{input::{Keys, TermRead}, raw::{IntoRawMode, RawTerminal}};
+use termion::{cursor::DetectCursorPos, input::{Keys, TermRead}, raw::{IntoRawMode, RawTerminal}};
 
 pub struct Terminal {
     pub stdout: RawTerminal<std::io::Stdout>,
@@ -25,5 +25,8 @@ impl Terminal {
 
     pub fn keys(&self) -> Keys<std::io::Stdin> {
         std::io::stdin().keys()
+    }
+    pub fn cursor_pos(&mut self) -> (u16, u16) {
+        self.stdout.cursor_pos().unwrap()
     }
 }

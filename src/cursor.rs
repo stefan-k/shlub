@@ -10,6 +10,7 @@
 use std::io::Stdout;
 use termion;
 use termion::cursor::DetectCursorPos;
+use terminal::termion::Terminal;
 use errors::*;
 
 pub struct Cursor {
@@ -25,11 +26,10 @@ fn get_screen_max() -> Result<(u16, u16)> {
 }
 
 impl Cursor {
-    // pub fn current_pos(stdout: &mut Stdout) -> Self {
-    pub fn current_pos(stdout: &mut termion::raw::RawTerminal<Stdout>) -> Self {
+    pub fn current_pos(term: &mut Terminal) -> Self {
         let (max_x, max_y) = get_screen_max().unwrap();
         // This eats the first byte, see #101 and #136 in termion repository
-        let (cx, cy) = stdout.cursor_pos().unwrap();
+        let (cx, cy) = term.cursor_pos();
         Cursor {
             x: cx,
             y: cy,
