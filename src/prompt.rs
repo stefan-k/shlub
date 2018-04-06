@@ -12,7 +12,7 @@ use utils;
 use termion;
 use termion::event::Key;
 use terminal::termion::Terminal;
-use std::io::{Stdout, Write};
+use std::io::Write;
 use cursor::Cursor;
 use history::History;
 use errors::*;
@@ -129,12 +129,12 @@ fn print_all(
     prompt: &mut Prompt,
     cmd: &Command,
     cursor: &mut Cursor,
-    stdout: &mut Stdout,
+    term: &mut Terminal,
 ) {
     // TODO: Print right prompt and adapt drawing of command
     prompt.update();
     write!(
-        stdout,
+        term.stdout,
         "{}{}{}{}{}",
         termion::cursor::Goto(1, cur_line),
         termion::clear::AfterCursor,
@@ -143,8 +143,8 @@ fn print_all(
         &cmd.cmd
     ).unwrap();
     cursor.set(prompt.pos_left + cmd.pos, cur_line);
-    write!(stdout, "{}", termion::cursor::Goto(cursor.x, cursor.y)).unwrap();
-    stdout.flush().unwrap();
+    write!(term.stdout, "{}", termion::cursor::Goto(cursor.x, cursor.y)).unwrap();
+    term.stdout.flush().unwrap();
 }
 
 pub fn read_line(history: &mut History, term: &mut Terminal) -> Result<String> {
@@ -156,7 +156,7 @@ pub fn read_line(history: &mut History, term: &mut Terminal) -> Result<String> {
 
     let mut stack = vec![];
 
-    print_all(cursor.y, &mut prompt, &cmd, &mut cursor, &mut term.stdout);
+    print_all(cursor.y, &mut prompt, &cmd, &mut cursor, term);
 
     for ch in term.keys() {
         let c = ch.unwrap();
@@ -228,11 +228,11 @@ pub fn read_line(history: &mut History, term: &mut Terminal) -> Result<String> {
             }
             (_, _, _) => {}
         }
-        print_all(cursor.y, &mut prompt, &cmd, &mut cursor, &mut term.stdout);
+        print_all(cursor.y, &mut prompt, &cmd, &mut cursor, term);
     }
 
     // print again to avoid printing \n in the middle of a command
-    print_all(cursor.y, &mut prompt, &cmd, &mut cursor, &mut term.stdout);
+    print_all(cursor.y, &mut prompt, &cmd, &mut cursor, term);
 
     cursor.pos_0();
     write!(

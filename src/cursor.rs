@@ -7,9 +7,7 @@
 
 //! # Todo
 
-use std::io::Stdout;
 use termion;
-use termion::cursor::DetectCursorPos;
 use terminal::termion::Terminal;
 use errors::*;
 
