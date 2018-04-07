@@ -13,11 +13,8 @@ extern crate shlub;
 extern crate termion;
 
 // #![warn(missing_docs)]
-use shlub::prompt::read_line;
-use shlub::utils::*;
-use shlub::history::History;
-use shlub::errors::*;
-use shlub::terminal::termion::Terminal;
+use shlub::{cursor::Cursor, errors::*, history::History, prompt::read_line,
+            terminal::termion::Terminal, utils::*};
 use std::io::{Stdout, Write};
 
 // fn abort_mission(stdout: &mut Stdout) {
@@ -82,12 +79,13 @@ fn main() {
 
 fn run() -> Result<()> {
     let mut term = Terminal::new();
+    let mut cursor = Cursor::current_pos(&mut term);
 
     // load history from file!
     // put current date as first
     let mut history = History::new();
     loop {
-        let cmd = read_line(&mut history, &mut term)?;
+        let cmd = read_line(&mut history, &mut cursor, &mut term)?;
 
         let cmd_split: Vec<&str> = cmd.split(' ').collect();
 

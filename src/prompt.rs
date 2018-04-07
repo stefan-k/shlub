@@ -147,8 +147,11 @@ fn print_all(
     term.stdout.flush().unwrap();
 }
 
-pub fn read_line(history: &mut History, term: &mut Terminal) -> Result<String> {
-    let mut cursor = Cursor::current_pos(term);
+pub fn read_line(
+    history: &mut History,
+    cursor: &mut Cursor,
+    term: &mut Terminal,
+) -> Result<String> {
     let mut cmd = Command::new();
     let mut prompt = Prompt::new();
 
@@ -156,7 +159,7 @@ pub fn read_line(history: &mut History, term: &mut Terminal) -> Result<String> {
 
     let mut stack = vec![];
 
-    print_all(cursor.y, &mut prompt, &cmd, &mut cursor, term);
+    print_all(cursor.y, &mut prompt, &cmd, cursor, term);
 
     for ch in term.keys() {
         let c = ch.unwrap();
@@ -228,11 +231,11 @@ pub fn read_line(history: &mut History, term: &mut Terminal) -> Result<String> {
             }
             (_, _, _) => {}
         }
-        print_all(cursor.y, &mut prompt, &cmd, &mut cursor, term);
+        print_all(cursor.y, &mut prompt, &cmd, cursor, term);
     }
 
     // print again to avoid printing \n in the middle of a command
-    print_all(cursor.y, &mut prompt, &cmd, &mut cursor, term);
+    print_all(cursor.y, &mut prompt, &cmd, cursor, term);
 
     cursor.pos_0();
     write!(
