@@ -9,10 +9,8 @@
 
 use std;
 use utils;
-use termion;
 use termion::event::Key;
 use terminal::termion::Terminal;
-use std::io::Write;
 use cursor::Cursor;
 use history::History;
 use errors::*;
@@ -133,18 +131,18 @@ fn print_all(
 ) {
     // TODO: Print right prompt and adapt drawing of command
     prompt.update();
-    write!(
-        term.stdout,
-        "{}{}{}{}{}",
-        termion::cursor::Goto(1, cur_line),
-        termion::clear::AfterCursor,
-        &prompt.left,
-        termion::cursor::Goto(prompt.pos_left, cur_line),
-        &cmd.cmd
-    ).unwrap();
+
+    term.move_cursor(1, cur_line);
+    term.clear_after_cursor();
+    term.write(&prompt.left);
+    term.move_cursor(prompt.pos_left, cur_line);
+    term.write(&cmd.cmd);
+
     cursor.set(prompt.pos_left + cmd.pos, cur_line);
-    write!(term.stdout, "{}", termion::cursor::Goto(cursor.x, cursor.y)).unwrap();
-    term.stdout.flush().unwrap();
+
+    term.move_cursor(cursor.x, cursor.y);
+
+    term.flush();
 }
 
 pub fn read_line(
@@ -239,12 +237,12 @@ pub fn read_line(
     print_all(cursor.y, &mut prompt, &cmd, cursor, term);
 
     cursor.pos_0();
-    write!(
-        term.stdout,
-        "{}\n",
-        termion::cursor::Goto(cursor.x, cursor.y)
-    )?;
-    term.stdout.flush()?;
+    term.move_cursor(cursor.x, cursor.y);
+    term.newline();
+
+    term.flush();
+
     history.push(&cmd.cmd);
+
     Ok(cmd.cmd)
 }
