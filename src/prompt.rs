@@ -152,6 +152,7 @@ pub fn read_line(
     cursor: &mut Cursor,
     term: &mut Terminal,
 ) -> Result<String> {
+    cursor.update_pos(term);
     let mut cmd = Command::new();
     let mut prompt = Prompt::new();
 

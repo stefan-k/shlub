@@ -36,6 +36,12 @@ impl Cursor {
         }
     }
 
+    pub fn update_pos(&mut self, term: &mut Terminal) -> () {
+        let (cx, cy) = term.cursor_pos();
+        self.x = cx;
+        self.y = cy;
+    }
+
     pub fn set(&mut self, x: u16, y: u16) -> &mut Self {
         self.update_max();
         self.y = y + (x - (x % self.max_x)) / self.max_x;
